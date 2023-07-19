@@ -14,7 +14,7 @@ BEGIN
     -- Validar el formato del mes (YYYY-MM)
     IF LENGTH(month) != 7 OR SUBSTRING(month, 5, 1) != '-' OR NOT IS_NUMERIC(SUBSTRING(month, 1, 4)) OR NOT IS_NUMERIC(SUBSTRING(month, 6, 2)) THEN
         SELECT 'El formato del mes no es válido. Debe ser YYYY-MM.' AS ErrorMessage;
-        LEAVE RegisterDeliveryProcedure;
+        LEAVE DVYOLYCTEProcedure;
     END IF;
     
     -- Obtener la fecha actual
@@ -23,7 +23,7 @@ BEGIN
     -- Validar que el mes no sea mayor al día de hoy
     IF CONCAT(month, '-01') > currentDate THEN
         SELECT 'El mes no puede ser mayor al día de hoy.' AS ErrorMessage;
-        LEAVE RegisterDeliveryProcedure;
+        LEAVE DVYOLYCTEProcedure;
     END IF;
     
     -- Verificar si el account existe en la tabla employees
@@ -48,9 +48,9 @@ BEGIN
     END IF;
 
     -- Etiqueta para salir del SP en caso de errores
-    LEAVE RegisterDeliveryProcedure;
+    LEAVE DVYOLYCTEProcedure;
     
-END RegisterDeliveryProcedure //
+END DVYOLYCTEProcedure //
 
 DELIMITER ;
 
