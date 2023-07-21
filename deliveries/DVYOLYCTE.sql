@@ -1,56 +1,50 @@
 DELIMITER //
 
 CREATE OR REPLACE PROCEDURE DVYOLYCTE(
-    IN name VARCHAR(100),
-    IN account VARCHAR(50),
-    IN role VARCHAR(50),
-    IN month VARCHAR(7),
-    IN deliveries INT
+    IN p_name VARCHAR(100),
+    IN p_account VARCHAR(50),
+    IN p_role VARCHAR(50),
+    IN p_month VARCHAR(7),
+    IN p_deliveries INT
 )
 BEGIN
-    DECLARE employeeId INT;
-    DECLARE currentDate DATE;
+    DECLARE p_employeeId INT;
+    DECLARE p_currentDate DATE;
     
     -- Validar el formato del mes (YYYY-MM)
-    IF LENGTH(month) != 7 OR SUBSTRING(month, 5, 1) != '-' OR NOT IS_NUMERIC(SUBSTRING(month, 1, 4)) OR NOT IS_NUMERIC(SUBSTRING(month, 6, 2)) THEN
-        SELECT 'El formato del mes no es válido. Debe ser YYYY-MM.' AS ErrorMessage;
-        LEAVE DVYOLYCTEProcedure;
+    IF LENGTH(p_month) != 7 OR SUBSTRING(p_month, 5, 1) != '-' OR SUBSTRING(p_month, 1, 4) REGEXP '[^0-9]' OR SUBSTRING(p_month, 6, 2) REGEXP '[^0-9]' THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El formato del mes no es válido. Debe ser YYYY-MM.';
     END IF;
     
     -- Obtener la fecha actual
-    SET currentDate = CURDATE();
+    SET p_currentDate = CURDATE();
     
     -- Validar que el mes no sea mayor al día de hoy
-    IF CONCAT(month, '-01') > currentDate THEN
-        SELECT 'El mes no puede ser mayor al día de hoy.' AS ErrorMessage;
-        LEAVE DVYOLYCTEProcedure;
+    IF CONCAT(p_month, '-01') > p_currentDate THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El mes no puede ser mayor al día de hoy.';
     END IF;
     
     -- Verificar si el account existe en la tabla employees
-    SELECT id_employee INTO employeeId
+    SELECT id INTO p_employeeId
     FROM employees
-    WHERE account = account;
+    WHERE account = p_account;
     
-    IF employeeId IS NULL THEN
+    IF p_employeeId IS NULL THEN
         -- Si el account no existe, regresar un mensaje de error
-        SELECT 'El número de cuenta no existe en la tabla employees' AS ErrorMessage;
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El número de cuenta no existe en la tabla employees';
     ELSE
         -- Verificar si ya existe una entrega para el mismo mes y empleado
-        IF EXISTS (SELECT 1 FROM deliveries_table WHERE id_employee = employeeId AND month = month) THEN
-            SELECT 'Ya existe una entrega registrada para el mismo empleado y mes.' AS ErrorMessage;
+        IF EXISTS (SELECT 1 FROM deliveries WHERE id_employee = p_employeeId AND month = p_month) THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ya existe una entrega registrada para el mismo empleado y mes.';
         ELSE
             -- Si el account existe y no hay duplicados, registrar la entrega en la tabla deliveries_table
-            INSERT INTO deliveries_table (id_employee, month, deliveries)
-            VALUES (employeeId, month, deliveries);
+            INSERT INTO deliveries (id_employee, month, deliveries)
+            VALUES (p_employeeId, p_month, p_deliveries);
             
-            SELECT 'Entrega registrada exitosamente' AS SuccessMessage;
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Entrega registrada exitosamente';
         END IF;
     END IF;
-
-    -- Etiqueta para salir del SP en caso de errores
-    LEAVE DVYOLYCTEProcedure;
     
-END DVYOLYCTEProcedure //
+END//
 
 DELIMITER ;
-
